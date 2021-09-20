@@ -13,4 +13,4 @@ bash 2_openapp.sh
 1_runuvctool.sh => 2_openapp.sh + pyCVTest5p.py + 3_CloseApp.sh
 ```
 ## Hardware setting
-!()[https://github.com/wowyunDBL/pyCVTest_ub/blob/master/Image/setting.jpg]
+()[!https://github.com/wowyunDBL/pyCVTest_ub/blob/master/Image/setting.jpg]
