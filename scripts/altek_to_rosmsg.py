@@ -1,4 +1,4 @@
-#!usr/bin/env python3
+#! /usr/bin/env python3
 
 '''ros utils'''
 import rospy
@@ -35,6 +35,15 @@ g_h_dist = 360.0
 g_h_nv21 = 540.0
 g_h_nv21_dist = 630.0
 
+def msg2CV(msg):
+    bridge = CvBridge()
+    try:
+        image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
+        return image
+    except CvBridgeError as e:
+        print(e)
+        return
+
 def CV2msg(cv_image):
     bridge = CvBridge()
     image_message = bridge.cv2_to_imgmsg(cv_image, encoding="passthrough")
@@ -45,6 +54,18 @@ def cbDepth_altek(msg):
     print("altek s: ",msg.header.stamp.secs)
     print("altek ns: ",msg.header.stamp.nsecs)
     cvimgDepth = msg2CV(msg)
+    
+    cv2.imshow('Distance', cvimgDepth)
+    cv2.waitKey(1)
+
+def cbColor_altek(msg):
+    print("receive color_altek!")
+    print("altek s: ",msg.header.stamp.secs)
+    print("altek ns: ",msg.header.stamp.nsecs)
+    cvimgColor = msg2CV(msg)
+    
+    cv2.imshow('RGB', cvimgColor)
+    cv2.waitKey(1)
 
 def ShowVersions():
     print(gMainVer)
@@ -78,7 +99,7 @@ def get_opencv_cfg():
 
 def LoadDepthLUT_Table():
     i=0
-    rf = open('./lut/depth_lut.txt', 'r')
+    rf = open('/home/ncslaber/mapping_node/mapping_ws/src/pyCVTest_ub/lut/depth_lut.txt', 'r')
     for line in rf.readlines():
         DepthLUT_table[i] = line
         i = i+1
@@ -86,7 +107,7 @@ def LoadDepthLUT_Table():
 
 def LoadColorLUT_Table():
     i=0
-    rf = open('./lut/color_lut.txt', 'r')
+    rf = open('/home/ncslaber/mapping_node/mapping_ws/src/pyCVTest_ub/lut/color_lut.txt', 'r')
     for line in rf.readlines():
         S0, S1, S2, S3 = line.split(',', 4)
         ColorLUT_table[i] = int(S0, 16)
@@ -139,7 +160,9 @@ def th_showimg():
             #tic1=time.time()
             #print("cycle-t: ",tic1)
             #tic2=tic1
-            print("ONly preview depth...")
+
+            # print("ONly preview depth...")
+
             # get 1 image from camera
             ret, frame_cv = cap.read()
             if ret == 0 :
@@ -208,6 +231,10 @@ rospy.init_node("cv_2_rosmsg", anonymous=True)
 pubDepth = rospy.Publisher("/Altek/depth/image_rect_raw", Image, queue_size=100)
 subDepth_altek = rospy.Subscriber("/Altek/depth/image_rect_raw", Image, cbDepth_altek)
 
+pubColor = rospy.Publisher("/Altek/color/image_raw", Image, queue_size=100)
+subColor_altek = rospy.Subscriber("/Altek/color/image_raw", CompressedImage, cbColor_altek) #/compressed
+
+
 # select camera, 0, or 1, or ...
 cap = cv2.VideoCapture(dev, cv2.CAP_ANY)
 ret = CheckCamera(cap, dev, cnt)
@@ -244,7 +271,12 @@ if cap.isOpened():
         msgDepth = CV2msg(fBGR)
         msgDepth.header.stamp.secs = now.secs
         msgDepth.header.stamp.nsecs = now.nsecs
-        pubDepth.publish(msgDepth)
+        # pubDepth.publish(msgDepth)
+
+        msgColor = CV2msg(fBGR)
+        msgColor.header.stamp.secs = now.secs
+        msgColor.header.stamp.nsecs = now.nsecs
+        pubColor.publish(msgColor)
 
         # msgColor = CV2msg(fBGR)
         # msgColor.header.stamp.secs = now.secs

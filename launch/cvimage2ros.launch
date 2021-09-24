@@ -1,5 +1,5 @@
 <launch>
   <node pkg="image_transport" type="republish" name="raw_to_compressed" args="raw in:=/Altek/color/image_raw/ compressed out:=/Altek/color/image_raw"/>
-  <node pkg="depth_app" type="cv_to_rosmsg.py" name="cv_to_rosmsg" output="screen"/>
+  <!--node pkg="pyCVTest_ub" type="altek_to_rosmsg.py" name="altek_to_rosmsg" output="screen"/-->
 
 </launch>
