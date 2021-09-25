@@ -20,14 +20,14 @@ gMainVer = "[py - 20210922]"
 
 gDistInMin = 200
 gDistInMax = 5000
-dev = 200 #202: default, 1: two more camera and manual set to 1.
+dev = 204 #202: default, 1: two more camera and manual set to 1.
 cnt = 10
 g_SaveDist = 0
 g_wait_ms = 1
 g_wait_1s = 1000
 DepthLUT_table = [0]*1024
 ColorLUT_table = [0]*1024*3
-g_mode=1 # 1: depth preview only, 2: depth + image preview.
+g_mode=2 # 1: depth preview only, 2: depth + image preview.
 g_IsStop=0
 
 g_w_dist = 640.0
@@ -55,8 +55,8 @@ def cbDepth_altek(msg):
     print("altek ns: ",msg.header.stamp.nsecs)
     cvimgDepth = msg2CV(msg)
     
-    cv2.imshow('Distance', cvimgDepth)
-    cv2.waitKey(1)
+    # cv2.imshow('Distance', cvimgDepth)
+    # cv2.waitKey(1)
 
 def cbColor_altek(msg):
     print("receive color_altek!")
@@ -175,7 +175,7 @@ def th_showimg():
             frame_np = np.frombuffer(frame_cv, dtype=np.uint16).reshape(imgSize)
             fBGR = np.zeros((h,w,3), np.uint8)
             PixelCvt_Dist2RGBnp(frame_np, w, h, fBGR, gDistInMin, gDistInMax, mapping)
-            q.put(fBGR)
+            q_d.put(fBGR)
             
             if(g_SaveDist == 1):
                 fcv = open('./Image/frame_dist.raw','wb')
@@ -211,8 +211,9 @@ def th_showimg():
             fBGRdt = np.zeros((h_d,w,3), np.uint8)
             PixelCvt_Dist2RGBnp(frame_npd, w, h_d, fBGRdt, gDistInMin, gDistInMax, mapping)
             # merge depth + image.
-            fBGR = np.concatenate((fBGRnv21, fBGRdt), axis=1)
-            q.put(fBGR)
+            # fBGR = np.concatenate((fBGRnv21, fBGRdt), axis=1)
+            q_d.put(fBGRdt)
+            q_rgb.put(fBGRnv21)
             
             if(g_SaveDist == 1):
                 fcv = open('./Image/frame_nv21.raw','wb')
@@ -232,7 +233,8 @@ pubDepth = rospy.Publisher("/Altek/depth/image_rect_raw", Image, queue_size=100)
 subDepth_altek = rospy.Subscriber("/Altek/depth/image_rect_raw", Image, cbDepth_altek)
 
 pubColor = rospy.Publisher("/Altek/color/image_raw", Image, queue_size=100)
-subColor_altek = rospy.Subscriber("/Altek/color/image_raw", CompressedImage, cbColor_altek) #/compressed
+subColor_altek = rospy.Subscriber("/Altek/color/image_raw/compressed", CompressedImage, cbColor_altek) 
+# subColor_altek = rospy.Subscriber("/Altek/color/image_raw", Image, cbColor_altek)
 
 
 # select camera, 0, or 1, or ...
@@ -240,6 +242,8 @@ cap = cv2.VideoCapture(dev, cv2.CAP_ANY)
 ret = CheckCamera(cap, dev, cnt)
 
 q = Queue()
+q_rgb = Queue()
+q_d = Queue()
 
 if cap.isOpened():
     cnt = 0
@@ -262,34 +266,43 @@ if cap.isOpened():
     t.start()
     
     while(True):
-        fBGR = q.get()
-        cv2.namedWindow('Distance', 1)
-        cv2.imshow('Distance', fBGR)
 
-        '''cvt to rosmsg'''
-        now = rospy.get_rostime()
-        msgDepth = CV2msg(fBGR)
-        msgDepth.header.stamp.secs = now.secs
-        msgDepth.header.stamp.nsecs = now.nsecs
-        # pubDepth.publish(msgDepth)
+        if g_mode == 1:
 
-        msgColor = CV2msg(fBGR)
-        msgColor.header.stamp.secs = now.secs
-        msgColor.header.stamp.nsecs = now.nsecs
-        pubColor.publish(msgColor)
+            fDepth = q_d.get()
+            # cv2.namedWindow('Distance', 1)
+            # cv2.imshow('Distance', fBGR)
 
-        # msgColor = CV2msg(fBGR)
-        # msgColor.header.stamp.secs = now.secs
-        # msgColor.header.stamp.nsecs = now.nsecs
-        # pubColor.publish(msgColor)
+            '''cvt to rosmsg'''
+            now = rospy.get_rostime()
+            msgDepth = CV2msg(fDepth)
+            msgDepth.header.stamp.secs = now.secs
+            msgDepth.header.stamp.nsecs = now.nsecs
+            pubDepth.publish(msgDepth)
         
+        else:
+            fDepth = q_d.get()
+            fBGR = q_rgb.get()
+
+            '''cvt to rosmsg'''
+            now = rospy.get_rostime()
+            msgDepth = CV2msg(fDepth)
+            msgDepth.header.stamp.secs = now.secs
+            msgDepth.header.stamp.nsecs = now.nsecs
+            pubDepth.publish(msgDepth)
+
+            msgColor = CV2msg(fBGR)
+            msgColor.header.stamp.secs = now.secs
+            msgColor.header.stamp.nsecs = now.nsecs
+            pubColor.publish(msgColor)
+            
         # exit while loop when press q
         ch = cv2.waitKey(g_wait_ms)
         if ch& 0xFF == 27: #ESC key
             g_IsStop = 1
             break
         elif ch& 0xFF == ord('s'):
-            g_SaveDist = 1;
+            g_SaveDist = 1
         
         cnt=cnt+1
 
@@ -301,7 +314,8 @@ t.join()
 # Release camera
 cap.release()
 # Release queue buffer
-q.put(0)
+q_rgb.put(0)
+q_d.put(0)
 
 # Close all OpenCV windows
 cv2.destroyAllWindows()
