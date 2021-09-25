@@ -1,5 +1,8 @@
 
 ```sh
+# installation
+$ sudo apt-get install android-tools-adb
+
 # cmd for using ffplay to check the UVC stream
 sudo ffplay -f v4l2 -framerate 20 -video_size 640x360 -input_format yuyv422 -i /dev/video0
 
@@ -32,7 +35,7 @@ if ret == 0 :
 ```
 
 ## FAQ
-adb devices shows “no_permissions”
+### 1. adb devices shows “no_permissions”
 (ref: https://stackoverflow.com/questions/53887322/adb-devices-no-permissions-user-in-plugdev-group-are-your-udev-rules-wrong)
 
 ```bash
