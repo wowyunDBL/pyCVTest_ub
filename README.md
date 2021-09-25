@@ -31,5 +31,26 @@ if ret == 0 :
     continue
 ```
 
+## FAQ
+adb devices shows “no_permissions”
+(ref: https://stackoverflow.com/questions/53887322/adb-devices-no-permissions-user-in-plugdev-group-are-your-udev-rules-wrong)
+
+```bash
+# Check vid/pid
+
+$ lsusb
+
+# create and edit rules file
+$ sudo vi /etc/udev/rules.d/51-android.rules
+# add following string to “51-android.rules”
+SUBSYSTEM=="usb", ATTR{idVendor}=="05c6", ATTR{idProduct}=="90cb", MODE="0666", GROUP="plugdev"
+
+# reload rules file
+$ sudo udevadm control --reload-rules
+```
+重新plug-in/out usb
+再次adb devices 查看結果.
+
+
 ## Hardware setting
 ![](https://github.com/wowyunDBL/pyCVTest_ub/blob/master/Image/setting.jpg)
