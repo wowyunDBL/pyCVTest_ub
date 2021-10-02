@@ -6,7 +6,7 @@ import time
 gtestmethod = 2
 gDistInMin = 200
 gDistInMax = 5000
-dev = 200 #202
+dev = 201 #202
 cnt = 10
 g_SaveDist = 0
 g_wait_ms = 50
