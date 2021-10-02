@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 '''ros utils'''
+import os
 import rospy
 from sensor_msgs.msg import Image, CameraInfo, NavSatFix, CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
@@ -20,7 +21,7 @@ gMainVer = "[py - 20210922]"
 
 gDistInMin = 200
 gDistInMax = 5000
-dev = 204 #202: default, 1: two more camera and manual set to 1.
+dev = 201 #202: default, 1: two more camera and manual set to 1.
 cnt = 10
 g_SaveDist = 0
 g_wait_ms = 1
@@ -34,6 +35,9 @@ g_w_dist = 640.0
 g_h_dist = 360.0
 g_h_nv21 = 540.0
 g_h_nv21_dist = 630.0
+
+lut_path = rospy.get_param('path/find_lut')
+print(lut_path)
 
 def msg2CV(msg):
     bridge = CvBridge()
@@ -99,7 +103,8 @@ def get_opencv_cfg():
 
 def LoadDepthLUT_Table():
     i=0
-    rf = open('/home/ncslaber/mapping_node/mapping_ws/src/pyCVTest_ub/lut/depth_lut.txt', 'r')
+    fn = os.path.join(lut_path, 'depth_lut.txt')
+    rf = open(fn, 'r')
     for line in rf.readlines():
         DepthLUT_table[i] = line
         i = i+1
@@ -107,7 +112,8 @@ def LoadDepthLUT_Table():
 
 def LoadColorLUT_Table():
     i=0
-    rf = open('/home/ncslaber/mapping_node/mapping_ws/src/pyCVTest_ub/lut/color_lut.txt', 'r')
+    fn = os.path.join(lut_path, 'color_lut.txt')
+    rf = open(fn, 'r')
     for line in rf.readlines():
         S0, S1, S2, S3 = line.split(',', 4)
         ColorLUT_table[i] = int(S0, 16)

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>pyCVTest_ub</name>
+  <name>py_cv_ub</name>
   <version>0.0.0</version>
-  <description>The pyCVTest_ub package</description>
+  <description>The py_cv_ub package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
